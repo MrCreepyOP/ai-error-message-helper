@@ -5,7 +5,8 @@ export function Navbar({
   historyCount,
   onOpenHistory,
   autoSave,
-  onToggleAutoSave
+  onToggleAutoSave,
+  isFirebaseConnected
 }) {
   return (
     <header className="navbar">
@@ -47,12 +48,33 @@ export function Navbar({
             </span>
           </div>
 
+          {/* Firebase Cloud Sync Indicator */}
+          <div
+            className="status-indicator"
+            title={
+              isFirebaseConnected
+                ? 'Firebase Firestore Connected (craftora-prototype)'
+                : 'Firebase Initializing / Offline Cache Active'
+            }
+          >
+            <span
+              className={`status-dot ${isFirebaseConnected ? 'online' : 'checking'}`}
+              style={{
+                backgroundColor: isFirebaseConnected ? '#f59e0b' : 'var(--text-muted)',
+                boxShadow: isFirebaseConnected ? '0 0 8px rgba(245, 158, 11, 0.6)' : 'none'
+              }}
+            />
+            <span>
+              {isFirebaseConnected ? 'Firebase Cloud' : 'Firebase Sync'}
+            </span>
+          </div>
+
           {/* Auto-save Switch */}
           <button
             type="button"
             className="btn-ghost"
             onClick={onToggleAutoSave}
-            title={autoSave ? 'Auto-saving diagnoses to localStorage' : 'Manual save mode'}
+            title={autoSave ? 'Auto-saving diagnoses to Firebase & localStorage' : 'Manual save mode'}
             style={{ fontSize: '0.8125rem' }}
           >
             <span style={{ opacity: 0.7 }}>Auto-save:</span>{' '}

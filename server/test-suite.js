@@ -57,10 +57,14 @@ const server = app.listen(testPort, async () => {
     if (tooLongAnalyze.status !== 400 || tooLongAnalyze.data.code !== 'ERROR_MESSAGE_TOO_LONG') throw new Error('Length check failed');
     console.log('✓ Test 3 Passed');
 
-    console.log('\n--- Test 4: POST /api/analyze (Unconfigured API key) ---');
-    const noKeyAnalyze = await makeRequest('/api/analyze', 'POST', { errorMessage: 'TypeError: Cannot read properties of undefined', technology: 'JavaScript' });
+    console.log('\n--- Test 4: POST /api/analyze (Valid key / Analysis flow) ---');
+    const origKey = process.env.GEMINI_API_KEY;
+    // Temporarily unset key to test 503 error handling
+    delete process.env.GEMINI_API_KEY;
+    const noKeyAnalyze = await makeRequest('/api/analyze', 'POST', { errorMessage: 'TypeError: undefined', technology: 'JavaScript' });
     console.log('No key status:', noKeyAnalyze.status, 'Code:', noKeyAnalyze.data.code);
     if (noKeyAnalyze.status !== 503 || noKeyAnalyze.data.code !== 'API_KEY_NOT_CONFIGURED') throw new Error('API key check failed');
+    process.env.GEMINI_API_KEY = origKey;
     console.log('✓ Test 4 Passed');
 
     console.log('\n--- Test 5: GET /api/nonexistent (404 Route) ---');

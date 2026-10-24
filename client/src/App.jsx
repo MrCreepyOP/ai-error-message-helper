@@ -35,7 +35,9 @@ export default function App() {
     deleteHistoryItem,
     toggleBookmark,
     clearAllHistory,
-    storageSizeKB
+    storageSizeKB,
+    isFirebaseConnected,
+    firebaseError
   } = useHistory();
 
   const { toasts, addToast, removeToast } = useToast();
@@ -210,6 +212,7 @@ export default function App() {
           toggleAutoSave();
           addToast(`Auto-save ${!autoSave ? 'Enabled' : 'Disabled'}`, 'info', 1800);
         }}
+        isFirebaseConnected={isFirebaseConnected}
       />
 
       <main className="main-content">
@@ -306,6 +309,8 @@ export default function App() {
         onToggleBookmark={toggleBookmark}
         onClearAllPrompt={() => setConfirmClearOpen(true)}
         storageSizeKB={storageSizeKB}
+        isFirebaseConnected={isFirebaseConnected}
+        firebaseError={firebaseError}
       />
 
       {/* Inspect Item Details Modal */}

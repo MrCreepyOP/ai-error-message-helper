@@ -55,18 +55,20 @@ app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);
 
 // Start server
-app.listen(PORT, () => {
-  const apiKeyConfigured = Boolean(
-    process.env.GEMINI_API_KEY &&
-    process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here'
-  );
+if (require.main === module) {
+  app.listen(PORT, () => {
+    const apiKeyConfigured = Boolean(
+      process.env.GEMINI_API_KEY &&
+      process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here'
+    );
 
-  console.log('====================================================');
-  console.log(` AI Error Message Helper Server running on port ${PORT}`);
-  console.log(` Health check: http://localhost:${PORT}/api/health`);
-  console.log(` Gemini API Key: ${apiKeyConfigured ? '✓ Configured' : '✗ Missing (see .env)'}`);
-  console.log(` Active Model: ${process.env.GEMINI_MODEL || 'gemini-2.5-flash'}`);
-  console.log('====================================================');
-});
+    console.log('====================================================');
+    console.log(` AI Error Message Helper Server running on port ${PORT}`);
+    console.log(` Health check: http://localhost:${PORT}/api/health`);
+    console.log(` Gemini API Key: ${apiKeyConfigured ? '✓ Configured' : '✗ Missing (see .env)'}`);
+    console.log(` Active Model: ${process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite'}`);
+    console.log('====================================================');
+  });
+}
 
 module.exports = app;

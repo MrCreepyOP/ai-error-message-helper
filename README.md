@@ -1,6 +1,6 @@
 # AI Error Message Helper — AI-Powered Error Analysis and Debugging Assistant
 
-A lightweight, responsive full-stack web application designed to help developers, students, and beginners understand cryptic technical errors and compiler diagnostics in plain, beginner-friendly language. Built with React 18, Express.js, and Google Gemini AI, featuring zero-database browser-native persistence via `localStorage`.
+A lightweight, responsive full-stack web application designed to help developers, students, and beginners understand cryptic technical errors and compiler diagnostics in plain, beginner-friendly language. Built with React 18, Express.js, Google Gemini AI, and Google Firebase Cloud Firestore (`craftora-prototype`) with offline caching.
 
 ---
 
@@ -67,9 +67,9 @@ When learning programming or working with complex frameworks, developers frequen
 - **Configuration:** `dotenv` for environment variable isolation.
 - **AI SDK:** Official Google Gen AI SDK (`@google/generative-ai`) communicating securely with Google Gemini models.
 
-### Persistence
-- **Storage Engine:** Browser `localStorage` (`ai_error_helper_history_v1`).
-- **Database:** None (no MongoDB, Firebase, Supabase, Postgres, or remote server storage).
+### Cloud Persistence & Storage
+- **Cloud Database:** Google Firebase Cloud Firestore (`craftora-prototype`) with real-time `onSnapshot` subscriptions.
+- **Offline Cache:** Browser `localStorage` (`ai_error_helper_history_v1`) for instant loads and zero-downtime offline fallbacks.
 
 ---
 
@@ -100,12 +100,12 @@ Every analysis request returns a normalized JSON object containing:
 1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey).
 2. Sign in with your Google account.
 3. Click **"Create API Key"** and select a project (or let AI Studio generate a default project).
-4. Copy the generated API key string (starts with `AIzaSy...`).
+4. Copy the generated API key string.
 5. Open the `server/.env` file in the project folder (copied from `server/.env.example`).
 6. Set the `GEMINI_API_KEY` variable:
    ```env
    PORT=5004
-   GEMINI_API_KEY=AIzaSyYourActualKeyHere
+   GEMINI_API_KEY=your_gemini_api_key_here
    GEMINI_MODEL=gemini-3.5-flash-lite
    CLIENT_ORIGIN=http://localhost:3000
    ```
@@ -173,24 +173,22 @@ http://localhost:3000
 
 ---
 
-## 9. How LocalStorage Persistence Works
+## 9. How Firebase Cloud Persistence Works
 
-This application intentionally avoids remote databases (like MongoDB, Firebase, or Supabase) to deliver a zero-friction, private, offline-capable developer experience:
+The application persists saved diagnoses directly to Google Firebase Cloud Firestore (`craftora-prototype`) with real-time listeners and a local cache fallback:
 
-- **Storage Location:** Diagnoses are saved in the user's browser under the key `ai_error_helper_history_v1`.
+- **Cloud Collection:** Diagnoses are stored in the `diagnoses` Firestore collection.
 - **Stored Data Structure:**
   - `id`: Unique timestamped identifier (e.g., `diag_176051...`).
   - `timestamp`: ISO 8601 date-time string.
   - `errorMessage`: Original error snippet pasted by the user.
   - `technology`: Selected programming language or ecosystem.
-  - `diagnosis`: Full 5-part AI response object.
-  - `isBookmarked`: Boolean star status.
-- **Storage Limits & Quotas:** The app caps history at the 100 most recent items to avoid exhausting the browser's ~5MB `localStorage` limit.
-- **Data Privacy:** Your past error messages never leave your machine; they are never uploaded to a cloud database.
-- **Important Warning:** Because data resides exclusively in `localStorage`:
-  - Clearing browser cookies and website data will remove your saved history.
-  - Browsing in Incognito/Private mode will clear history upon closing the private window.
-  - Switching to a different browser on the same computer will not transfer history.
+  - `diagnosis`: Complete 5-part AI response object (summary, causes, fix, code example, prevention).
+  - `isBookmarked`: Boolean bookmark status.
+  - `updatedAt`: ISO 8601 modification timestamp.
+- **Real-Time Synchronization:** Uses Firebase `onSnapshot` to stream changes instantly across multiple browser tabs and devices.
+- **Offline & Fallback Safety:** All diagnoses are mirrored to browser `localStorage` as an offline cache. If the client goes offline or experiences network disruptions, the application continues to operate seamlessly without data loss.
+- **Firebase Configuration:** Configured in `client/src/services/firebase.js` using the `craftora-prototype` credentials.
 
 ---
 

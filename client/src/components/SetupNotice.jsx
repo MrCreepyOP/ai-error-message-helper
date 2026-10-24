@@ -48,7 +48,7 @@ export function SetupNotice({ backendStatus, onRefreshStatus }) {
           Open the <span className="setup-code-snippet">server/.env</span> file in this project.
         </li>
         <li>
-          Set <span className="setup-code-snippet">GEMINI_API_KEY=AIzaSy...</span> and save the file.
+          Set <span className="setup-code-snippet">GEMINI_API_KEY=your_key_here</span> and save the file.
         </li>
       </ol>
     </div>

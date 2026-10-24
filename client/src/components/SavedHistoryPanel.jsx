@@ -10,7 +10,9 @@ export function SavedHistoryPanel({
   onDeleteItem,
   onToggleBookmark,
   onClearAllPrompt,
-  storageSizeKB
+  storageSizeKB,
+  isFirebaseConnected,
+  firebaseError
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTech, setSelectedTech] = useState('ALL');
@@ -59,6 +61,22 @@ export function SavedHistoryPanel({
             </svg>
             <h2 className="drawer-title">Saved Diagnoses</h2>
             <span className="history-count-badge">{history.length}</span>
+            <span
+              style={{
+                fontSize: '0.72rem',
+                padding: '0.2rem 0.5rem',
+                borderRadius: '9999px',
+                background: isFirebaseConnected ? 'rgba(245, 158, 11, 0.15)' : 'rgba(100, 116, 139, 0.2)',
+                color: isFirebaseConnected ? '#fbbf24' : 'var(--text-muted)',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}
+              title="Cloud storage powered by Firebase Firestore"
+            >
+              ☁️ {isFirebaseConnected ? 'Firebase Synced' : 'Syncing...'}
+            </span>
           </div>
 
           <button
@@ -111,17 +129,24 @@ export function SavedHistoryPanel({
           </div>
         </div>
 
+        {/* Firebase Warning if Permissions are locked */}
+        {firebaseError && (
+          <div style={{ margin: '0 1.25rem', padding: '0.6rem 0.8rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '6px', fontSize: '0.75rem', color: '#fca5a5' }}>
+            <strong>Firebase Sync Note:</strong> {firebaseError}. Local cache is currently preserving your diagnoses.
+          </div>
+        )}
+
         {/* History Items List */}
         <div className="history-list">
           {filteredHistory.length === 0 ? (
             <div className="empty-state">
-              <span className="empty-state-icon">📂</span>
+              <span className="empty-state-icon">☁️</span>
               <span className="empty-state-title">
                 {history.length === 0 ? 'No Saved History Yet' : 'No Matching Diagnoses'}
               </span>
               <p className="empty-state-desc">
                 {history.length === 0
-                  ? 'Diagnoses are automatically saved here in your browser\'s localStorage for quick offline recall.'
+                  ? 'Diagnoses are automatically saved in Google Firebase Firestore and cached locally for offline recall.'
                   : 'Try adjusting your search query or technology filter.'}
               </p>
             </div>
@@ -186,7 +211,9 @@ export function SavedHistoryPanel({
         {/* Drawer Footer with Storage Usage & Clear All */}
         <div className="drawer-footer">
           <div className="storage-info-row">
-            <span>Storage: <strong>{storageSizeKB} KB</strong> in localStorage</span>
+            <span>
+              Cloud: <strong>Firebase Firestore</strong> ({history.length} records)
+            </span>
             {history.length > 0 && (
               <button
                 type="button"
@@ -200,7 +227,7 @@ export function SavedHistoryPanel({
           </div>
 
           <p className="storage-notice-text">
-            ⚠️ Privacy notice: All data resides strictly in your browser’s localStorage. No diagnoses are stored remotely. Clearing your browser cache or switching devices will erase this local history.
+            ☁️ <strong>Firebase Cloud Persistence:</strong> Saved diagnoses are persisted in your Firebase project (<code>craftora-prototype</code>) and synced in real time across browser tabs and devices, backed with local offline storage.
           </p>
         </div>
       </div>

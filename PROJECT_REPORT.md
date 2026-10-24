@@ -18,7 +18,7 @@ This project presents **AI Error Message Helper**, a full-stack, lightweight deb
 4. Code Example (Problematic vs. Corrected comparison)
 5. Prevention Tip (Defensive coding habits)
 
-Crucially, the system departs from bloated multi-tier enterprise architectures by avoiding remote databases (such as MongoDB, PostgreSQL, or cloud BaaS). Instead, persistence for saved analyses, bookmarks, search queries, and historical logs is achieved exclusively through client-side browser `localStorage`. A local Express.js backend acts as a secure, stateless proxy that handles validation, rate limiting, and private credential mediation with the Gemini API. The result is a high-performance, private, zero-cost developer utility ideally suited for academic demonstrations and beginner programmers.
+Persistence for saved analyses, bookmarks, search queries, and historical logs is achieved through Google Firebase Cloud Firestore (`craftora-prototype`) with real-time subscriptions, paired with an offline browser `localStorage` fallback. A local Express.js backend acts as a secure, stateless proxy that handles validation, rate limiting, and private credential mediation with the Gemini API. The result is a high-performance, real-time synced developer utility ideally suited for academic demonstrations and beginner programmers.
 
 ---
 
@@ -46,7 +46,7 @@ The primary objectives of this project are:
 - **To develop a responsive, accessible React-based web interface** styled with custom vanilla CSS and dark-slate aesthetics tailored for developer productivity.
 - **To integrate Google's Gemini API via a secure Node.js Express backend** ensuring that secret API keys are never exposed to browser bundles.
 - **To enforce a rigorous, predictable 5-part diagnostic JSON schema** ensuring that every analysis consistently provides a summary, ranked causes, actionable fixes, comparative code examples, and prevention tips.
-- **To implement zero-database local persistence using browser `localStorage`**, enabling offline search, filtering, bookmarking, and deletion of past diagnoses without cloud databases.
+- **To implement real-time cloud persistence using Google Firebase Cloud Firestore**, with an offline `localStorage` fallback, enabling real-time multi-device sync, search, filtering, bookmarking, and deletion of past diagnoses.
 - **To provide realistic one-click sample errors** across 8 distinct ecosystems (JavaScript, Python, Java, C++, React, Node.js, MongoDB, and SQL) to facilitate academic demonstrations and rapid evaluation.
 
 ---

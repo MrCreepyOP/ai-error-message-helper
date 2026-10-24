@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   loadHistory,
   saveHistory,
@@ -6,31 +6,67 @@ import {
   saveAutoSavePreference,
   getHistoryStorageSizeKB
 } from '../utils/storageUtils';
+import {
+  saveDiagnosisToFirebase,
+  deleteDiagnosisFromFirebase,
+  toggleBookmarkInFirebase,
+  clearAllDiagnosesFromFirebase,
+  subscribeToDiagnoses,
+  migrateLocalHistoryToFirebase
+} from '../services/firebaseService';
 
 /**
- * Custom hook for local history management backed by localStorage
+ * Custom hook for history management backed by Firebase Firestore
+ * with automatic fallback and synchronization with browser localStorage.
  */
 export function useHistory() {
   const [history, setHistory] = useState([]);
   const [autoSave, setAutoSave] = useState(true);
   const [storageSizeKB, setStorageSizeKB] = useState('0');
+  const [isFirebaseConnected, setIsFirebaseConnected] = useState(false);
+  const [firebaseError, setFirebaseError] = useState(null);
+  const hasMigrated = useRef(false);
 
-  // Initialize from localStorage on mount
+  // Initialize from localStorage as instant cache, then subscribe to Firebase Firestore
   useEffect(() => {
-    const loaded = loadHistory();
-    setHistory(loaded);
+    // 1. Instant local load
+    const localItems = loadHistory();
+    setHistory(localItems);
     setAutoSave(loadAutoSavePreference());
     setStorageSizeKB(getHistoryStorageSizeKB());
+
+    // 2. Setup real-time listener to Firebase Firestore
+    const unsubscribe = subscribeToDiagnoses(
+      (firebaseItems) => {
+        setIsFirebaseConnected(true);
+        setFirebaseError(null);
+        setHistory(firebaseItems);
+        // Keep local cache in sync
+        saveHistory(firebaseItems);
+        setStorageSizeKB(getHistoryStorageSizeKB());
+
+        // Migrate local items to Firebase once if there were local items
+        if (!hasMigrated.current && localItems.length > 0) {
+          hasMigrated.current = true;
+          migrateLocalHistoryToFirebase(localItems).catch((err) => {
+            console.warn('Migration note:', err);
+          });
+        }
+      },
+      (error) => {
+        console.warn('Firebase sync notice:', error.message);
+        setIsFirebaseConnected(false);
+        setFirebaseError(error.message);
+        // Gracefully keep using local cache if Firebase rules or network fail
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
-  // Sync history state to localStorage whenever history changes
-  const updateHistoryAndStorage = useCallback((newItems) => {
-    setHistory(newItems);
-    saveHistory(newItems);
-    setStorageSizeKB(getHistoryStorageSizeKB());
-  }, []);
-
-  // Add a new diagnosis entry
+  // Add a new diagnosis entry (saves to Firebase and local backup)
   const addDiagnosisToHistory = useCallback((entry) => {
     const id = entry.id || `diag_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
     const newEntry = {
@@ -40,8 +76,8 @@ export function useHistory() {
       isBookmarked: Boolean(entry.isBookmarked)
     };
 
+    // Optimistic local state update
     setHistory((prev) => {
-      // Avoid duplicate entries if identical error & diagnosis exists
       const existingIndex = prev.findIndex(item => item.id === id);
       let updated;
       if (existingIndex >= 0) {
@@ -55,24 +91,39 @@ export function useHistory() {
       return updated;
     });
 
+    // Save to Firebase Firestore
+    saveDiagnosisToFirebase(newEntry).then((res) => {
+      if (!res.success) {
+        console.warn('Could not save to Firebase Firestore, cached locally:', res.error);
+      }
+    });
+
     return id;
   }, []);
 
   // Delete an individual entry
   const deleteHistoryItem = useCallback((id) => {
+    // Optimistic local update
     setHistory((prev) => {
       const updated = prev.filter((item) => item.id !== id);
       saveHistory(updated);
       setStorageSizeKB(getHistoryStorageSizeKB());
       return updated;
     });
+
+    // Delete in Firebase Firestore
+    deleteDiagnosisFromFirebase(id);
   }, []);
 
   // Toggle bookmark flag for an entry
   const toggleBookmark = useCallback((id) => {
+    let currentBookmarked = false;
+
+    // Optimistic local update
     setHistory((prev) => {
       const updated = prev.map((item) => {
         if (item.id === id) {
+          currentBookmarked = Boolean(item.isBookmarked);
           return { ...item, isBookmarked: !item.isBookmarked };
         }
         return item;
@@ -80,12 +131,21 @@ export function useHistory() {
       saveHistory(updated);
       return updated;
     });
+
+    // Update in Firebase Firestore
+    toggleBookmarkInFirebase(id, currentBookmarked);
   }, []);
 
   // Clear all history entries
   const clearAllHistory = useCallback(() => {
-    updateHistoryAndStorage([]);
-  }, [updateHistoryAndStorage]);
+    const currentItems = [...history];
+    setHistory([]);
+    saveHistory([]);
+    setStorageSizeKB('0');
+
+    // Clear in Firebase Firestore
+    clearAllDiagnosesFromFirebase(currentItems);
+  }, [history]);
 
   // Toggle auto-save preference
   const toggleAutoSave = useCallback(() => {
@@ -104,6 +164,8 @@ export function useHistory() {
     deleteHistoryItem,
     toggleBookmark,
     clearAllHistory,
-    storageSizeKB
+    storageSizeKB,
+    isFirebaseConnected,
+    firebaseError
   };
 }
