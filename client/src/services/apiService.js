@@ -3,9 +3,8 @@
  * Uses native Fetch API
  */
 
-// If Vite dev server proxies /api, standard relative path works.
-// We also support explicit PORT 5004 fallback if running standalone.
-const API_BASE = '/api';
+// In production, uses VITE_API_URL if configured, otherwise falls back to relative /api
+const API_BASE = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/+$/, '') : '') + '/api';
 
 /**
  * Check backend health status
